@@ -10,7 +10,6 @@ type Data =
 export default function handler(req: NextApiRequest, res: NextApiResponse<Data>) {
   
   const { id } = req.query;
-
   if(!mongoose.isValidObjectId(id)) {
     return res.status(400).json({ message: 'El ID no es válido ' + id });
   }
@@ -19,11 +18,13 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<Data>)
     case 'GET':
       return getEntry(req, res);   
     case 'PUT':
-      return updateEntry(req, res);   
+      return updateEntry(req, res);
+    case 'DELETE':
+      return removeEntry(req, res);
     default:
       return res.status(400).json({ message: 'Método no existe. ' });
   }
-
+  
 }
 
 const updateEntry = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
@@ -69,4 +70,19 @@ const getEntry = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
 
   res.status(200).json(entry);
 
+}
+
+const removeEntry = async(req: NextApiRequest, res: NextApiResponse<Data>) => {
+  const { id } = req.query;
+  
+  await db.connect();
+
+  try {
+    const removeEntry = await Entry.findByIdAndRemove(id);
+    await db.disconnect();
+    res.status(200).json(removeEntry!);
+  } catch (error:any) {
+    await db.disconnect();
+    res.status(400).json({ message: error.errors.status.message });
+  }
 }
